@@ -1,13 +1,14 @@
 #include <LiquidCrystal.h>
 
-static constexpr int switchActionPin = 7;
+static constexpr uint8_t switchActionPin = 7;
+static constexpr uint8_t switchStatePin = 8;
 static constexpr int commandLength = 5; 
 static constexpr int screenSize = 16;
 
 static constexpr char startCmdChar = '$';
 static constexpr char endCmdChar = '#';
 
-LiquidCr6ystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 struct SimData
 {
@@ -42,6 +43,8 @@ SimData simData;
 void setup()
 {
     pinMode(switchActionPin, INPUT);
+    pinMode(switchStatePin, INPUT);
+
 
     Init_LCD();
     Init_Serial();
@@ -65,7 +68,7 @@ void loop()
 
     if(currentState != State::WAITING)
     {
-        // Check if action button is pressed.
+        // First Check if buttons are pressed. (user input)
         if(digitalRead(switchActionPin) == HIGH)
         {
             const Action newAction = static_cast<Action>(max(1, (static_cast<int>(currentAction) + 1) % _MAX));
@@ -73,14 +76,29 @@ void loop()
 
             delay(250);
         }
-        else if(IsActionSelected) // update every 250 ms. dont delay.
+        else if(digitalRead(switchStatePin) == HIGH)
         {
-            const long now = millis();
-            if(now - actionTimer > 250)
+            const State newState = currentState == State::READ ? State::WRITE : State::READ;
+            ChangeState(newState);
+
+            delay(250); 
+        }
+        
+        const long now = millis();
+        if(now - actionTimer > 250)
+        {
+            if(currentState == State::READ)
             {
-                HandleSelectedAction();
-                actionTimer = now;
+                if(IsActionSelected) // update every 250 ms. dont delay.
+                {
+                    HandleSelectedAction();
+                }
             }
+            else if(currentState == State::WRITE)
+            {
+                Serial.println("SHEAD-100");
+            }
+            actionTimer = millis();
         }
     }
 }
@@ -153,7 +171,12 @@ void ChangeAction(Action newAction)
     }
     else if (currentAction == Action::HEADING)
     {
-        PrintOnLCD("HEADING: ");
+        PrintOnLCD("Heading: ");
+    }
+
+    if(currentState == State::WRITE)
+    {
+        PrintOnLCD("\nSending Data...", 0, false);
     }
 }
 
@@ -166,11 +189,11 @@ void ChangeState(State newState)
     }
     else if (currentState == State::READ)
     {
-        PrintOnLCD("");
+        ChangeAction(currentAction);
     }
     else if (currentState == State::WRITE)
     {
-        PrintOnLCD("");
+        ChangeAction(currentAction);
     }
 }
 

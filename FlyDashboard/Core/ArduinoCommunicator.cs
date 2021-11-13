@@ -4,12 +4,19 @@ using System.Linq;
 
 namespace FlyDashboard.Core
 {
+    public class CommandEventArgs : EventArgs
+    {
+        public string commandID;
+        public string commandValue;
+    }
+
     public class ArduinoCommunicator
     {
 
         private SerialPort? _port;
         public bool IsConnected { get => _port != null && _port.IsOpen; }
 
+        public event EventHandler<CommandEventArgs>? OnCommandRequest;
 
         public ArduinoCommunicator()
         {
@@ -45,6 +52,7 @@ namespace FlyDashboard.Core
         private void SerialPort_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
         {
             System.Console.WriteLine("error");
+            Disconnect();
         }
 
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -53,6 +61,17 @@ namespace FlyDashboard.Core
             {
                 string readLine = _port.ReadLine();
                 System.Console.WriteLine(readLine);
+
+                string[] cmdData = readLine.Split("-");
+
+                CommandEventArgs args = new CommandEventArgs();
+                args.commandID = cmdData[0];
+                args.commandValue = cmdData[1];
+
+                OnCommandRequest?.Invoke(this, args);
+
+                //m_oSimConnect.SetDataOnSimObject(m_oSelectedSimvarRequest.eDef, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, dValue);
+
             }
         }
 

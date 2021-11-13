@@ -30,6 +30,16 @@ namespace FlyDashboard
 
             _stopwatch = Stopwatch.StartNew();
             SimConnection.SimConnection.OnDataReceived += SimConnection_OnDataReceived;
+            DashboardInterface.Communicator.OnCommandRequest += Communicator_OnCommandRequest;
+        }
+
+        private void Communicator_OnCommandRequest(object? sender, CommandEventArgs e)
+        {
+            if (e.commandID.Equals("SHEAD"))
+            {
+                double headingValue = double.Parse(e.commandValue);
+                SimConnection.SimConnection.SetDataOnSim("AUTOPILOT HEADING LOCK DIR", headingValue);
+            }
         }
 
         private void SimConnection_OnDataReceived(object? sender, DashboardEventArgs e)

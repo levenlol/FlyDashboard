@@ -52,7 +52,7 @@ namespace FlyDashboard.Core
             OnDataReceived?.Invoke(sender, new DashboardEventArgs { Info = (DashboardInfo) data.dwData[0] });
         }
 
-        void SetDataOnSim(string variableID, double inValue)
+        public void SetDataOnSim(string variableID, double inValue)
         {
             if(IsConnected)
             {
@@ -60,7 +60,7 @@ namespace FlyDashboard.Core
             }
         }
 
-        void SetDataOnSim(string variableID, string inValue)
+        public void SetDataOnSim(string variableID, string inValue)
         {
             throw new NotImplementedException();
         }
