@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="FlyDashboard.UI.ArduinoInterfaceControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:FlyDashboard.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="40" d:DesignWidth="800">
+    
+    <StackPanel Orientation="Horizontal">
+        <ComboBox Width="200" x:Name="serialPortsComboBox" IsEnabled="False" DropDownOpened="SerialPortsComboBox_DropDownOpened"/>
+        <Button Width="100" Margin="5 0 0 0" x:Name="serialPortsConnect" Click="SerialPortsConnect_Click">
+            <TextBlock Text="Connect HW" x:Name="connectButtonTextBlock"/>
+        </Button>
+        
+        <Border x:Name="ConnectionStatusImage" Background="{Binding LedColor}" Margin="5 0 0 0" Height="20" Width="20">
+            <Border.OpacityMask>
+                <RadialGradientBrush>
+                    <GradientStop Color="White" Offset="0.529"/>
+                    <GradientStop Color="#00000000" Offset="1"/>
+                </RadialGradientBrush>
+            </Border.OpacityMask>
+        </Border>
+    </StackPanel>
+</UserControl>

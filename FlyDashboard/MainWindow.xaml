@@ -1,0 +1,34 @@
+﻿<Window x:Class="FlyDashboard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FlyDashboard" xmlns:ui="clr-namespace:FlyDashboard.UI"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Background="MediumBlue">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="339*"/>
+            <ColumnDefinition Width="461*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid x:Name="GridLayout" Grid.Row="1" Margin="10,0,10,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+        </Grid>
+
+        <ui:SimConnectionControl Margin="10,10,0,10" x:Name="SimConnection" HorizontalAlignment="Left" Grid.Row="0" Width="308"/>
+        <ui:ArduinoInterfaceControl Margin="10,0,0,0" x:Name="DashboardInterface" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Width="Auto" Height="22"/>
+    </Grid>
+
+
+</Window>
