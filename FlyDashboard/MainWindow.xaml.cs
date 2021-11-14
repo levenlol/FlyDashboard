@@ -47,6 +47,10 @@ namespace FlyDashboard
                     System.Console.WriteLine(ex.ToString());    // todo implement a read mechanism, and remove this check.
                 }
             }
+            else if(e.commandID.Equals("THEAD"))
+            {
+                SimConnection.SimConnection.TriggerAPHeadingEvent();
+            }
         }
 
         private void SimConnection_OnDataReceived(object? sender, DashboardEventArgs e)

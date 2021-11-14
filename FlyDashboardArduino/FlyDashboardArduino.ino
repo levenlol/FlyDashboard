@@ -1,5 +1,6 @@
 #include <LiquidCrystal.h>
 
+static constexpr uint8_t writeButtonPin = 6;
 static constexpr uint8_t switchActionPin = 7;
 static constexpr uint8_t switchStatePin = 8;
 static constexpr int commandLength = 5; 
@@ -46,7 +47,7 @@ void setup()
 {
     pinMode(switchActionPin, INPUT);
     pinMode(switchStatePin, INPUT);
-
+    pinMode(writeButtonPin, INPUT);
 
     Init_LCD();
     Init_Serial();
@@ -67,6 +68,7 @@ void Init_Serial()
 void loop()
 {
     static long actionTimer = 0;
+    static long writeTimer = 0;
 
     if(currentState != State::WAITING)
     {
@@ -101,8 +103,18 @@ void loop()
         }
         else if(currentState == State::WRITE)
         {
-            //Serial.println("SHEAD-100");
             HandleWriteAction();
+
+            const long now = millis();
+            if(now - writeTimer > 250)
+            {
+                if(IsActionSelected() && digitalRead(writeButtonPin) == HIGH)
+                {
+                    Serial.println("THEAD-.");
+                }
+
+                writeTimer = millis();
+            }
         }
     }
 }

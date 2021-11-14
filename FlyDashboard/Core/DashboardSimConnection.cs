@@ -47,12 +47,18 @@ namespace FlyDashboard.Core
             simConnection.AddToDataDefinition(EUserData.Heading, "AUTOPILOT HEADING LOCK DIR", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
             simConnection.RegisterDataDefineStruct<AltitudeStruct>(EUserData.Heading);
 
+            // events
+            simConnection.MapClientEventToSimEvent(EventsID.ToggleHeading, "AP_HDG_HOLD");
+            simConnection.AddClientEventToNotificationGroup(NotificationGroups.GROUP0, EventsID.ToggleHeading, false);
+
             simConnection.RequestDataOnSimObject(EUserData.Dummy, EUserData.Dummy, (uint)SIMCONNECT_SIMOBJECT_TYPE.USER, SIMCONNECT_PERIOD.VISUAL_FRAME, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
         }
 
         protected override void OnRecvObjectData(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data) 
         {
             OnDataReceived?.Invoke(sender, new DashboardEventArgs { Info = (DashboardInfo) data.dwData[0] });
+
+            //simConnection.SetNotificationGroupPriority(NOTIFICATION_GROUPS.GROUP0, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
         }
 
         public void SetDataOnSim(string variableID, double inValue)
@@ -63,6 +69,14 @@ namespace FlyDashboard.Core
                 altitude.altitude = inValue;
 
                 simConnection.SetDataOnSimObject(EUserData.Heading, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, altitude);
+            }
+        }
+
+        public void TriggerAPHeadingEvent()
+        {
+            if(IsConnected)
+            {
+                simConnection.TransmitClientEvent(0, EventsID.ToggleHeading, 1, NotificationGroups.GROUP0, SIMCONNECT_EVENT_FLAG.DEFAULT);
             }
         }
 

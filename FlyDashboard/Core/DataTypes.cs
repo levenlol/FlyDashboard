@@ -30,4 +30,14 @@ namespace FlyDashboard.Core
     {
         public double altitude;
     };
+
+    enum EventsID
+    {
+        ToggleHeading
+    }
+
+    enum NotificationGroups
+    {
+        GROUP0 = 20
+    }
 }
