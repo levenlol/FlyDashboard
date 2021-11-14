@@ -37,8 +37,15 @@ namespace FlyDashboard
         {
             if (e.commandID.Equals("SHEAD"))
             {
-                double headingValue = double.Parse(e.commandValue);
-                SimConnection.SimConnection.SetDataOnSim("AUTOPILOT HEADING LOCK DIR", headingValue);
+                try
+                {
+                    double headingValue = double.Parse(e.commandValue);
+                    SimConnection.SimConnection.SetDataOnSim("AUTOPILOT HEADING LOCK DIR", headingValue);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine(ex.ToString());    // todo implement a read mechanism, and remove this check.
+                }
             }
         }
 

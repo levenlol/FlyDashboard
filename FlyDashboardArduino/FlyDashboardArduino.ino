@@ -5,6 +5,8 @@ static constexpr uint8_t switchStatePin = 8;
 static constexpr int commandLength = 5; 
 static constexpr int screenSize = 16;
 
+static constexpr uint8_t trimmerPin = A0;
+
 static constexpr char startCmdChar = '$';
 static constexpr char endCmdChar = '#';
 
@@ -84,21 +86,23 @@ void loop()
             delay(250); 
         }
         
-        const long now = millis();
-        if(now - actionTimer > 250)
+        if(currentState == State::READ)
         {
-            if(currentState == State::READ)
+            const long now = millis();
+            if(now - actionTimer > 250)
             {
-                if(IsActionSelected) // update every 250 ms. dont delay.
+                if(IsActionSelected()) // update every 250 ms. dont delay.
                 {
                     HandleSelectedAction();
                 }
+
+                actionTimer = millis();
             }
-            else if(currentState == State::WRITE)
-            {
-                Serial.println("SHEAD-100");
-            }
-            actionTimer = millis();
+        }
+        else if(currentState == State::WRITE)
+        {
+            //Serial.println("SHEAD-100");
+            HandleWriteAction();
         }
     }
 }
@@ -106,6 +110,28 @@ void loop()
 bool IsActionSelected()
 {
     return currentAction > Action::_NONE && currentAction < Action::_MAX;
+}
+
+void HandleWriteAction()
+{
+    if(IsActionSelected())
+    {
+        if(currentAction == Action::HEADING)
+        {
+            const int trimmerValue = analogRead(trimmerPin);
+
+            const int headingValue = map(trimmerValue, 0, 1023, 0, 359);
+
+            if(simData.Heading != headingValue)
+            {
+                simData.Heading = headingValue;
+
+                const String headingValStr = BuildStringOfSizeFromNumber(headingValue, 5);
+                PrintOnLCD(headingValStr, screenSize - 5, false);
+                Serial.println("SHEAD-" + String(simData.Heading));
+            }
+        }
+    }
 }
 
 void HandleSelectedAction()

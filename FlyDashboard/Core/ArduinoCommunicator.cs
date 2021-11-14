@@ -57,21 +57,23 @@ namespace FlyDashboard.Core
 
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            while(_port.BytesToRead > 0)
+            while(_port.IsOpen && _port.BytesToRead > 0)
             {
                 string readLine = _port.ReadLine();
                 System.Console.WriteLine(readLine);
 
                 string[] cmdData = readLine.Split("-");
 
-                CommandEventArgs args = new CommandEventArgs();
-                args.commandID = cmdData[0];
-                args.commandValue = cmdData[1];
+                if(cmdData.Length > 1)
+                {
+                    CommandEventArgs args = new CommandEventArgs();
+                    args.commandID = cmdData[0];
+                    args.commandValue = cmdData[1];
 
-                OnCommandRequest?.Invoke(this, args);
+                    OnCommandRequest?.Invoke(this, args);
+                }
 
                 //m_oSimConnect.SetDataOnSimObject(m_oSelectedSimvarRequest.eDef, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, dValue);
-
             }
         }
 

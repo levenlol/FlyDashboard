@@ -43,7 +43,10 @@ namespace FlyDashboard.Core
 
             simConnection.RegisterDataDefineStruct<DashboardInfo>(EUserData.Dummy);
 
-            //simConnection.RequestDataOnSimObjectType(UserData.Position, UserData.Position, 0, SIMCONNECT_SIMOBJECT_TYPE.USER);
+            // Setter
+            simConnection.AddToDataDefinition(EUserData.Heading, "AUTOPILOT HEADING LOCK DIR", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnection.RegisterDataDefineStruct<AltitudeStruct>(EUserData.Heading);
+
             simConnection.RequestDataOnSimObject(EUserData.Dummy, EUserData.Dummy, (uint)SIMCONNECT_SIMOBJECT_TYPE.USER, SIMCONNECT_PERIOD.VISUAL_FRAME, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
         }
 
@@ -54,9 +57,12 @@ namespace FlyDashboard.Core
 
         public void SetDataOnSim(string variableID, double inValue)
         {
-            if(IsConnected)
+            if(IsConnected && variableID != null)
             {
-                simConnection.SetDataOnSimObject(ESimData.Dummy, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, inValue);
+                AltitudeStruct altitude = new AltitudeStruct();
+                altitude.altitude = inValue;
+
+                simConnection.SetDataOnSimObject(EUserData.Heading, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, altitude);
             }
         }
 
