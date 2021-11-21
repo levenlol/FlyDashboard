@@ -59,18 +59,25 @@ namespace FlyDashboard.Core
         {
             while(_port.IsOpen && _port.BytesToRead > 0)
             {
-                string readLine = _port.ReadLine();
-                System.Console.WriteLine(readLine);
-
-                string[] cmdData = readLine.Split("-");
-
-                if(cmdData.Length > 1)
+                try
                 {
-                    CommandEventArgs args = new CommandEventArgs();
-                    args.commandID = cmdData[0];
-                    args.commandValue = cmdData[1];
+                    string readLine = _port.ReadTo("$");
+                    System.Console.WriteLine(readLine);
 
-                    OnCommandRequest?.Invoke(this, args);
+                    string[] cmdData = readLine.Split("-");
+
+                    if (cmdData.Length > 1)
+                    {
+                        CommandEventArgs args = new CommandEventArgs();
+                        args.commandID = cmdData[0];
+                        args.commandValue = cmdData[1];
+
+                        OnCommandRequest?.Invoke(this, args);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
 
                 //m_oSimConnect.SetDataOnSimObject(m_oSelectedSimvarRequest.eDef, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, dValue);
@@ -104,18 +111,6 @@ namespace FlyDashboard.Core
         public void SendDisconnectionCommand()
         {
             SendCommand("DISCO");
-        }
-
-        public void SendAltitudeCommand(int altitude)
-        {
-            const string cmd = "ALTIT";
-            SendCommand(cmd + altitude.ToString());
-        }
-
-        public void SendHeadingCommand(int hdg)
-        {
-            const string cmd = "HEADI";
-            SendCommand(cmd + hdg.ToString());
         }
 
         public void SendGroundSpeedCommand(int speed)

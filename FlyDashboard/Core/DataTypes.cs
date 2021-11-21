@@ -10,7 +10,8 @@ namespace FlyDashboard.Core
     public enum EUserData
     {
         Dummy,
-        Heading
+        Heading,
+        Altitude
     }
 
     // String properties must be packed inside of a struct
@@ -26,9 +27,9 @@ namespace FlyDashboard.Core
     };
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    struct AltitudeStruct
+    struct DoubleStruct
     {
-        public double altitude;
+        public double value;
     };
 
     enum EventsID

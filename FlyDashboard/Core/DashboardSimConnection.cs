@@ -45,7 +45,10 @@ namespace FlyDashboard.Core
 
             // Setter
             simConnection.AddToDataDefinition(EUserData.Heading, "AUTOPILOT HEADING LOCK DIR", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-            simConnection.RegisterDataDefineStruct<AltitudeStruct>(EUserData.Heading);
+            simConnection.RegisterDataDefineStruct<DoubleStruct>(EUserData.Heading);
+
+            simConnection.AddToDataDefinition(EUserData.Altitude, "AUTOPILOT ALTITUDE LOCK VAR", "feet", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnection.RegisterDataDefineStruct<DoubleStruct>(EUserData.Altitude);
 
             // events
             simConnection.MapClientEventToSimEvent(EventsID.ToggleHeading, "AP_HDG_HOLD");
@@ -61,14 +64,14 @@ namespace FlyDashboard.Core
             //simConnection.SetNotificationGroupPriority(NOTIFICATION_GROUPS.GROUP0, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
         }
 
-        public void SetDataOnSim(string variableID, double inValue)
+        public void SetDataOnSim(EUserData userDataType, double inValue)
         {
-            if(IsConnected && variableID != null)
+            if(IsConnected)
             {
-                AltitudeStruct altitude = new AltitudeStruct();
-                altitude.altitude = inValue;
+                DoubleStruct structValue = new DoubleStruct();
+                structValue.value = inValue;
 
-                simConnection.SetDataOnSimObject(EUserData.Heading, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, altitude);
+                simConnection.SetDataOnSimObject(userDataType, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, structValue);
             }
         }
 

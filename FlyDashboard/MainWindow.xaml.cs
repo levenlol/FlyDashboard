@@ -37,17 +37,19 @@ namespace FlyDashboard
         {
             if (e.commandID.Equals("SHEAD"))
             {
-                try
-                {
-                    double headingValue = double.Parse(e.commandValue);
-                    SimConnection.SimConnection.SetDataOnSim("AUTOPILOT HEADING LOCK DIR", headingValue);
-                }
-                catch (Exception ex)
-                {
-                    System.Console.WriteLine(ex.ToString());    // todo implement a read mechanism, and remove this check.
-                }
+                double headingValue = double.Parse(e.commandValue);
+                SimConnection.SimConnection.SetDataOnSim(EUserData.Heading, headingValue);
+            }
+            else if(e.commandID.Equals("SALTI"))
+            {
+                double altitudeValue = double.Parse(e.commandValue);
+                SimConnection.SimConnection.SetDataOnSim(EUserData.Altitude, altitudeValue);
             }
             else if(e.commandID.Equals("THEAD"))
+            {
+                SimConnection.SimConnection.TriggerAPHeadingEvent();
+            }
+            else if (e.commandID.Equals("TAUTO"))
             {
                 SimConnection.SimConnection.TriggerAPHeadingEvent();
             }
@@ -59,10 +61,8 @@ namespace FlyDashboard
             {
                 if (DashboardInterface.Communicator != null)
                 {
-                    DashboardInterface.Communicator.SendAltitudeCommand(Convert.ToInt32(e.Info.altitude));
                     DashboardInterface.Communicator.SendGroundSpeedCommand(Convert.ToInt32(e.Info.groundSpeed));
                     DashboardInterface.Communicator.SendAirSpeedCommand(Convert.ToInt32(e.Info.airSpeed));
-                    DashboardInterface.Communicator.SendHeadingCommand(Convert.ToInt32(e.Info.heading));
                 }
 
                 _lastElapsedMS = _stopwatch.ElapsedMilliseconds;

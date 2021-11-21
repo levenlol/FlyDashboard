@@ -1,31 +1,38 @@
 #include <LiquidCrystal.h>
+#include "MultiButton.h"
 
-static constexpr uint8_t writeButtonPin = 6;
+static constexpr uint8_t headingButtonPin = 6;
 static constexpr uint8_t switchActionPin = 7;
-static constexpr uint8_t switchStatePin = 8;
+static constexpr uint8_t autopilotStatePin = 8;
 static constexpr int commandLength = 5; 
 static constexpr int screenSize = 16;
 
-static constexpr uint8_t trimmerPin = A0;
+static constexpr uint8_t headingTrimmerPin = A0;
+static constexpr uint8_t altitudeTrimmerPin = A1;
+
 
 static constexpr char startCmdChar = '$';
 static constexpr char endCmdChar = '#';
 
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(10, 9, 5, 4, 3, 2);
 
 struct SimData
 {
-    long Altitude = 0;
     unsigned int GroundSpeed = 0;
     unsigned int AirSpeed = 0;
-    unsigned int Heading = 0;
+    unsigned int VerticalSpeed = 0;
+};
+
+struct APData
+{
+    unsigned int heading = 0;
+    unsigned long altitude = 2000;
 };
 
 enum State
 {
     WAITING = 0,
-    READ = 1,
-    WRITE = 2
+    WRITE = 1
 };
 
 enum Action
@@ -41,13 +48,14 @@ enum Action
 Action currentAction = Action::_NONE;
 State currentState = State::WAITING;
 SimData simData;
+APData apData;
 
 
 void setup()
 {
     pinMode(switchActionPin, INPUT);
-    pinMode(switchStatePin, INPUT);
-    pinMode(writeButtonPin, INPUT);
+    pinMode(autopilotStatePin, INPUT);
+    pinMode(headingButtonPin, INPUT);
 
     Init_LCD();
     Init_Serial();
@@ -80,37 +88,22 @@ void loop()
 
             delay(250);
         }
-        else if(digitalRead(switchStatePin) == HIGH)
-        {
-            const State newState = currentState == State::READ ? State::WRITE : State::READ;
-            ChangeState(newState);
-
-            delay(250); 
-        }
         
-        if(currentState == State::READ)
-        {
-            const long now = millis();
-            if(now - actionTimer > 250)
-            {
-                if(IsActionSelected()) // update every 250 ms. dont delay.
-                {
-                    HandleSelectedAction();
-                }
-
-                actionTimer = millis();
-            }
-        }
-        else if(currentState == State::WRITE)
+        
+        if(currentState == State::WRITE)
         {
             HandleWriteAction();
 
             const long now = millis();
             if(now - writeTimer > 250)
             {
-                if(IsActionSelected() && digitalRead(writeButtonPin) == HIGH)
+                if(digitalRead(headingButtonPin) == HIGH)
                 {
-                    Serial.println("THEAD-.");
+                    Serial.println("THEAD-.$");
+                }
+                else if(digitalRead(autopilotStatePin) == HIGH)
+                {
+                    Serial.println("TAUTO-.$");
                 }
 
                 writeTimer = millis();
@@ -124,51 +117,58 @@ bool IsActionSelected()
     return currentAction > Action::_NONE && currentAction < Action::_MAX;
 }
 
+void UpdateLCDValue(long value, uint8_t dim = 5, uint8_t rowindex = 0)
+{
+    const String valStr = BuildStringOfSizeFromNumber(value, dim);
+    PrintOnLCD(valStr, screenSize - dim, rowindex, false);
+}
+
 void HandleWriteAction()
 {
-    if(IsActionSelected())
+    //if(IsActionSelected())
     {
-        if(currentAction == Action::HEADING)
         {
-            const int trimmerValue = analogRead(trimmerPin);
+            // Handle Heading
+            const int trimmerValue = analogRead(headingTrimmerPin);
 
             const int headingValue = map(trimmerValue, 0, 1023, 0, 359);
 
-            if(simData.Heading != headingValue)
+            if(apData.heading != headingValue)
             {
-                simData.Heading = headingValue;
+                apData.heading = headingValue;
 
-                const String headingValStr = BuildStringOfSizeFromNumber(headingValue, 5);
-                PrintOnLCD(headingValStr, screenSize - 5, false);
-                Serial.println("SHEAD-" + String(simData.Heading));
+                if(currentAction == Action::HEADING)
+                {
+                    UpdateLCDValue(headingValue);
+                }
+
+                SendCommand("SHEAD", String(apData.heading));
+            }
+        }
+
+        {
+            const int trimmerValue = analogRead(altitudeTrimmerPin);
+
+            const long altitudeValue = map(trimmerValue, 0, 1023, 0, 800) * 100;
+
+            if(apData.altitude != altitudeValue)
+            {
+                apData.altitude = altitudeValue;
+
+                if(currentAction == Action::ALTITUDE)
+                {
+                    UpdateLCDValue(altitudeValue, 7);
+                }
+
+                SendCommand("SALTI", String(apData.altitude));
             }
         }
     }
 }
 
-void HandleSelectedAction()
+void SendCommand(String command, String content)
 {
-    if(currentAction == Action::ALTITUDE)
-    {
-        // build altitude str, want a fixed size string (big performance improvement on display on led.)
-        const String altitudeStr = BuildStringOfSizeFromNumber(simData.Altitude, 5);
-        
-        PrintOnLCD(altitudeStr, screenSize - 5, false);
-    }
-    else if(currentAction == Action::SPEED)
-    {
-        // convert from feet/s to knots.
-        String speedStr = BuildStringOfSizeFromNumber(simData.AirSpeed / 1.688, 4);
-
-        speedStr.concat(" kn");
-        PrintOnLCD(speedStr, screenSize - 7, false); // padding of 7, 4 (length of speed) + 3(unit measure)
-    }
-    else if(currentAction == Action::HEADING)
-    {
-        String headingStr = BuildStringOfSizeFromNumber(simData.Heading, 3);
-
-        PrintOnLCD(headingStr, screenSize - 3, false);
-    }
+    Serial.print(command + String("-") + content + String("$")) ;
 }
 
 // Build a string with size N. if digit number is less than size, string is pad-filled with spaces.
@@ -202,6 +202,8 @@ void ChangeAction(Action newAction)
     if(currentAction == Action::ALTITUDE)
     {
         PrintOnLCD("Altitude: ");
+        PrintOnLCD("VS: ", 0, 1, false);
+        UpdateLCDValue(apData.altitude, 6);
     }
     else if(currentAction == Action::SPEED)
     {
@@ -210,11 +212,7 @@ void ChangeAction(Action newAction)
     else if (currentAction == Action::HEADING)
     {
         PrintOnLCD("Heading: ");
-    }
-
-    if(currentState == State::WRITE)
-    {
-        PrintOnLCD("\nSending Data...", 0, false);
+        UpdateLCDValue(apData.heading);
     }
 }
 
@@ -224,10 +222,6 @@ void ChangeState(State newState)
     if(currentState == State::WAITING)
     {
         PrintOnLCD("Waiting for\nConnection...");
-    }
-    else if (currentState == State::READ)
-    {
-        ChangeAction(currentAction);
     }
     else if (currentState == State::WRITE)
     {
@@ -257,11 +251,8 @@ void HandleCommand(String msg)
 {
     const String cmd = msg.substring(0, commandLength);
     const String content = msg.substring(commandLength);
-    if(cmd.equals("ALTIT")) // altitude
-    {
-        simData.Altitude = content.toInt();
-    }
-    else if (cmd.equals("GROSP")) // ground speed
+    
+    if (cmd.equals("GROSP")) // ground speed
     {
         simData.GroundSpeed = content.toInt();
     }
@@ -269,16 +260,17 @@ void HandleCommand(String msg)
     {
         simData.AirSpeed = content.toInt();
     }
-    else if(cmd.equals("HEADI")) // heading
-    {
-        simData.Heading = content.toInt();
-    }
     else if(cmd.equals("CONNE"))
     {
         ChangeAction(Action::_NONE);
-        ChangeState(State::READ);
+        ChangeState(State::WRITE);
 
         PrintOnLCD("Connected and \nReady to ROCK !");
+
+        delay(1000);
+
+        ChangeAction(Action::ALTITUDE);
+
     }
     else if(cmd.equals("DISCO"))
     {
@@ -291,10 +283,10 @@ void HandleCommand(String msg)
 
 void PrintOnLCD(String msg)
 {
-    PrintOnLCD(msg, 0, true);
+    PrintOnLCD(msg, 0, 0, true);
 }
 
-void PrintOnLCD(const String& msg, uint8_t startIndex, bool bClear)
+void PrintOnLCD(const String& msg, uint8_t startIndex, uint8_t rowIndex, bool bClear)
 {
     if(bClear)
     {
@@ -307,16 +299,17 @@ void PrintOnLCD(const String& msg, uint8_t startIndex, bool bClear)
         const String row1 = msg.substring(0, index);
         const String row2 = msg.substring(index + 1);
 
-        lcd.setCursor(startIndex, 0);
+        lcd.setCursor(startIndex, rowIndex);
 
         lcd.print(row1);
+        rowIndex++;
 
-        lcd.setCursor(startIndex, 1);
+        lcd.setCursor(startIndex, rowIndex);
         lcd.print(row2);
     }
     else
     {
-        lcd.setCursor(startIndex, 0);
+        lcd.setCursor(startIndex, rowIndex);
         lcd.print(msg);
     }
 }
